@@ -131,19 +131,128 @@
     heatmapTable.innerHTML = '';
   }
 
-  function exportToExcel() {
-    const wb = XLSX.utils.book_new();
-
-    const entrySheet = XLSX.utils.json_to_sheet(entries.map(e => ({
-      Category: e.category,
-      Hours: e.hours,
-      Date: e.date,
-      Color: categoryColors[e.category] || ''
-    })));
-    XLSX.utils.book_append_sheet(wb, entrySheet, 'Entries');
-
-    // weekly summary
+  async function exportToExcel() {
+    const workbook = new ExcelJS.Workbook();
     const now = new Date();
+
+    function applyStyles(sheet) {
+      sheet.eachRow((row, rowNumber) => {
+        row.eachCell(cell => {
+          cell.font = { name: 'Calibri', size: 12, bold: rowNumber === 1 };
+          cell.alignment = {
+            vertical: 'middle',
+            horizontal: rowNumber === 1 ? 'center' : 'left',
+            indent: rowNumber === 1 ? 0 : 1
+          };
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+          if (rowNumber === 1) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF0F0F0' }
+            };
+          }
+        });
+      });
+      sheet.columns.forEach(col => {
+        let max = 10;
+        col.eachCell({ includeEmpty: true }, c => {
+          const len = c.value ? c.value.toString().length : 0;
+          if (len > max) max = len;
+        });
+        col.width = max + 2;
+      });
+    }
+
+    function addImage(sheet, dataUrl) {
+      if (!dataUrl) return 0;
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+      const id = workbook.addImage({ base64, extension: 'png' });
+      sheet.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: 600, height: 300 } });
+      return 17; // leave space for image
+    }
+
+    function createWeeklyChartImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 300;
+      const cctx = canvas.getContext('2d');
+      const keys = [];
+      const labels = [];
+      const data = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        keys.push(key);
+        labels.push(d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }));
+        data.push(entries.filter(e => e.date === key).reduce((s, e) => s + e.hours, 0));
+      }
+      new Chart(cctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Hours', data, backgroundColor: '#69c' }] },
+        options: { responsive: false, animation: false, scales: { y: { beginAtZero: true } } }
+      });
+      return canvas.toDataURL('image/png');
+    }
+
+    function createMonthlyChartImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 300;
+      const cctx = canvas.getContext('2d');
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const labels = [];
+      const data = [];
+      for (let i = 1; i <= daysInMonth; i++) {
+        const d = new Date(start);
+        d.setDate(i);
+        const key = d.toISOString().slice(0, 10);
+        labels.push(i.toString());
+        data.push(entries.filter(e => e.date === key).reduce((s, e) => s + e.hours, 0));
+      }
+      new Chart(cctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Hours', data, backgroundColor: '#69c' }] },
+        options: { responsive: false, animation: false, scales: { y: { beginAtZero: true } } }
+      });
+      return canvas.toDataURL('image/png');
+    }
+
+    function createYearlyChartImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 300;
+      const cctx = canvas.getContext('2d');
+      const months = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), i, 1));
+      const labels = months.map(m => m.toLocaleDateString(undefined, { month: 'short' }));
+      const cats = [...new Set(entries.map(e => e.category))];
+      const datasets = cats.map(cat => {
+        const data = months.map(m => {
+          const monthStr = m.toISOString().slice(0, 7);
+          return entries.filter(e => e.category === cat && e.date.startsWith(monthStr)).reduce((s, e) => s + e.hours, 0);
+        });
+        return { label: cat, data, borderColor: categoryColors[cat] || '#000', backgroundColor: categoryColors[cat] || 'rgba(0,0,0,0.1)', fill: false };
+      });
+      new Chart(cctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: { responsive: false, animation: false, scales: { y: { beginAtZero: true } } }
+      });
+      return canvas.toDataURL('image/png');
+    }
+
+    const entrySheet = workbook.addWorksheet('Entries');
+    entrySheet.addRow(['Category', 'Hours', 'Date', 'Color']);
+    entries.forEach(e => entrySheet.addRow([e.category, e.hours, e.date, categoryColors[e.category] || '']));
+    applyStyles(entrySheet);
+
     const weekKeys = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
@@ -152,56 +261,69 @@
     }
     const weekHeader = ['Category'].concat(weekKeys.map(k => new Date(k).toLocaleDateString()));
     const cats = [...new Set(entries.map(e => e.category))];
-    const weekData = [weekHeader];
+    const weekSheet = workbook.addWorksheet('Weekly Summary');
+    let startRow = addImage(weekSheet, createWeeklyChartImage());
+    for (let i = 1; i < startRow; i++) weekSheet.addRow([]);
+    weekSheet.addRow(weekHeader);
     cats.forEach(cat => {
       const row = [cat];
       weekKeys.forEach(k => {
         const total = entries.filter(e => e.category === cat && e.date === k).reduce((s, e) => s + e.hours, 0);
         row.push(total);
       });
-      weekData.push(row);
+      weekSheet.addRow(row);
     });
-    const weekSheet = XLSX.utils.aoa_to_sheet(weekData);
-    XLSX.utils.book_append_sheet(wb, weekSheet, 'Weekly Summary');
+    applyStyles(weekSheet);
 
-    // monthly summary
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthSheet = workbook.addWorksheet('Monthly Summary');
+    startRow = addImage(monthSheet, createMonthlyChartImage());
+    for (let i = 1; i < startRow; i++) monthSheet.addRow([]);
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const monthKeys = Array.from({ length: daysInMonth }, (_, i) => {
-      const d = new Date(start);
+      const d = new Date(startMonth);
       d.setDate(i + 1);
       return d.toISOString().slice(0, 10);
     });
     const monthHeader = ['Category'].concat(monthKeys.map(k => k.slice(8)));
-    const monthData = [monthHeader];
+    monthSheet.addRow(monthHeader);
     cats.forEach(cat => {
       const row = [cat];
       monthKeys.forEach(k => {
         const total = entries.filter(e => e.category === cat && e.date === k).reduce((s, e) => s + e.hours, 0);
         row.push(total);
       });
-      monthData.push(row);
+      monthSheet.addRow(row);
     });
-    const monthSheet = XLSX.utils.aoa_to_sheet(monthData);
-    XLSX.utils.book_append_sheet(wb, monthSheet, 'Monthly Summary');
+    applyStyles(monthSheet);
 
-    // yearly summary
-    const months = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), i, 1));
-    const yearHeader = ['Category'].concat(months.map(m => m.toLocaleDateString(undefined, { month: 'short' })));
-    const yearData = [yearHeader];
+    const yearSheet = workbook.addWorksheet('Yearly Summary');
+    startRow = addImage(yearSheet, createYearlyChartImage());
+    for (let i = 1; i < startRow; i++) yearSheet.addRow([]);
+    const monthsArr = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), i, 1));
+    const yearHeader = ['Category'].concat(monthsArr.map(m => m.toLocaleDateString(undefined, { month: 'short' })));
+    yearSheet.addRow(yearHeader);
     cats.forEach(cat => {
       const row = [cat];
-      months.forEach(m => {
+      monthsArr.forEach(m => {
         const prefix = m.toISOString().slice(0, 7);
         const total = entries.filter(e => e.category === cat && e.date.startsWith(prefix)).reduce((s, e) => s + e.hours, 0);
         row.push(total);
       });
-      yearData.push(row);
+      yearSheet.addRow(row);
     });
-    const yearSheet = XLSX.utils.aoa_to_sheet(yearData);
-    XLSX.utils.book_append_sheet(wb, yearSheet, 'Yearly Summary');
+    applyStyles(yearSheet);
 
-    XLSX.writeFile(wb, 'time-tracking-export.xlsx');
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'time-tracking-export.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    a.remove();
   }
 
   function renderView() {
