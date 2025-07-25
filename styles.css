@@ -10,3 +10,7 @@ section { margin-bottom: 30px; }
   font-weight: bold;
   text-align: center;
 }
+#heatmap-section td.edited {
+  background: yellow;
+  transition: background-color 0.5s;
+}

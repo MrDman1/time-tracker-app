@@ -5,6 +5,7 @@
   <title>Time Tracker</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <h1>Time Tracker</h1>
@@ -20,7 +21,15 @@
   </section>
 
   <section id="heatmap-section">
-    <h2>Weekly Category Heatmap</h2>
+    <h2>Category Overview</h2>
+    <label>View:
+      <select id="time-range">
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+        <option value="year">Year</option>
+      </select>
+    </label>
+    <button id="export-excel">Export to Excel</button>
     <table id="heatmap"></table>
   </section>
 
