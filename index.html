@@ -12,10 +12,16 @@
     <h2>Add Entry</h2>
     <form id="entry-form">
       <label>Category: <input type="text" id="category" required></label>
+      <label>Color: <input type="color" id="color" value="#ff0000"></label>
       <label>Date: <input type="date" id="date" required></label>
       <label>Hours: <input type="number" id="hours" step="0.1" min="0" required></label>
       <button type="submit">Add</button>
     </form>
+  </section>
+
+  <section id="heatmap-section">
+    <h2>Weekly Category Heatmap</h2>
+    <table id="heatmap"></table>
   </section>
 
   <section>
