@@ -369,34 +369,83 @@
 
   function renderChart() {
     const filtered = getFilteredEntries();
-    const totals = {};
-    filtered.forEach(e => {
-      totals[e.category] = (totals[e.category] || 0) + e.hours;
-    });
-    const labels = Object.keys(totals);
-    const data = labels.map(l => totals[l]);
     const type = chartTypeSelect.value;
 
     if (chart) chart.destroy();
-    chart = new Chart(ctx, {
-      type,
-      data: {
-        labels,
-        datasets: [{
-          label: 'Hours',
-          data,
-          backgroundColor: labels.map(l => categoryColors[l] || 'rgba(75, 192, 192, 0.2)'),
-          borderColor: labels.map(l => categoryColors[l] || 'rgba(75, 192, 192, 1)'),
-          borderWidth: 1,
-          fill: type === 'line' ? false : true,
-        }]
-      },
-      options: {
-        scales: type === 'line' || type === 'bar' ? {
-          y: { beginAtZero: true }
-        } : {}
+
+    if (type === 'line') {
+      const start = startDateInput.value
+        ? new Date(startDateInput.value)
+        : filtered.length
+          ? new Date(Math.min(...filtered.map(e => new Date(e.date))))
+          : new Date();
+      const end = endDateInput.value
+        ? new Date(endDateInput.value)
+        : filtered.length
+          ? new Date(Math.max(...filtered.map(e => new Date(e.date))))
+          : new Date();
+
+      const dates = [];
+      const d = new Date(start);
+      while (d <= end) {
+        dates.push(d.toISOString().slice(0, 10));
+        d.setDate(d.getDate() + 1);
       }
-    });
+
+      const categories = [...new Set(filtered.map(e => e.category))];
+      const datasets = categories.map(cat => {
+        const data = dates.map(date => {
+          return filtered
+            .filter(e => e.category === cat && e.date === date)
+            .reduce((s, e) => s + e.hours, 0);
+        });
+        return {
+          label: cat,
+          data,
+          borderColor: categoryColors[cat] || '#000',
+          backgroundColor: categoryColors[cat] || 'rgba(0,0,0,0.1)',
+          fill: false,
+        };
+      });
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates,
+          datasets,
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true },
+          },
+        },
+      });
+    } else {
+      const totals = {};
+      filtered.forEach(e => {
+        totals[e.category] = (totals[e.category] || 0) + e.hours;
+      });
+      const labels = Object.keys(totals);
+      const data = labels.map(l => totals[l]);
+
+      chart = new Chart(ctx, {
+        type,
+        data: {
+          labels,
+          datasets: [{
+            label: 'Hours',
+            data,
+            backgroundColor: labels.map(l => categoryColors[l] || 'rgba(75, 192, 192, 0.2)'),
+            borderColor: labels.map(l => categoryColors[l] || 'rgba(75, 192, 192, 1)'),
+            borderWidth: 1,
+            fill: type === 'line' ? false : true,
+          }]
+        },
+        options: {
+          scales: type === 'bar' ? { y: { beginAtZero: true } } : {}
+        }
+      });
+    }
   }
 
   showChartBtn.addEventListener('click', renderChart);
