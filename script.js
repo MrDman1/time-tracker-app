@@ -29,6 +29,11 @@
   let categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
   let goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
 
+  // ensure category list includes all categories found in saved entries
+  const allCategories = [...new Set(entries.map(e => e.category))];
+  const merged = new Set(categoryList.concat(allCategories));
+  categoryList = Array.from(merged);
+
   function saveColors() {
     localStorage.setItem('categoryColors', JSON.stringify(categoryColors));
   }

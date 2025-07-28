@@ -106,14 +106,17 @@ canvas {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: flex-start;
 }
 
 #chart-container {
-  flex: 0 0 60%;
+  flex: 1 1 60%;
+  min-width: 250px;
 }
 
 #goal-panel {
-  flex: 0 0 40%;
+  flex: 1 1 35%;
+  min-width: 200px;
   border: 1px solid #ccc;
   padding: 10px;
   box-sizing: border-box;
@@ -172,7 +175,7 @@ canvas {
 }
 
 #chart {
-  max-width: 400px;
+  max-width: 100%;
 }
 
 @media (max-width: 600px) {
