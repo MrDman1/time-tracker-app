@@ -1,6 +1,7 @@
 body { font-family: Arial, sans-serif; margin: 20px; }
 form label { margin-right: 10px; }
 section { margin-bottom: 30px; }
+#day-filter label { margin-right: 6px; }
 
 #heatmap-section table { border-collapse: collapse; width: 100%; }
 #heatmap-section th, #heatmap-section td {
