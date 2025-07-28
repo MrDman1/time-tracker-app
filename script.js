@@ -499,6 +499,9 @@
         overviewChart = null;
       }
     }
+    renderChart();
+    renderGoalPanel();
+    console.log('Category overview rendered');
   }
 
   const goalListEl = document.getElementById('goal-list');
@@ -571,11 +574,11 @@
       item.appendChild(progress);
       goalListEl.appendChild(item);
     });
+    console.log('Goal panel rendered');
   }
 
   // initial render
-  renderCategoryOverview();
-  renderGoalPanel();
+  renderView();
 
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -699,6 +702,14 @@
         }
       });
     }
+    console.log('Chart rendered');
+  }
+
+  function renderView() {
+    renderCategoryOverview();
+    renderChart();
+    renderGoalPanel();
+    console.log('View rendered');
   }
 
   showChartBtn.addEventListener('click', renderChart);

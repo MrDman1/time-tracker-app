@@ -112,6 +112,7 @@ canvas {
 #chart-container {
   flex: 1 1 60%;
   min-width: 250px;
+  overflow-x: auto;
 }
 
 #goal-panel {
@@ -233,23 +234,34 @@ canvas {
 
   #chart-goal-container {
     flex-direction: column;
+    display: block;
+    width: 100%;
   }
 
   #chart-container,
   #goal-panel {
     flex: 0 0 100%;
     width: 100%;
+    display: block;
   }
 
-  canvas {
-    width: 100% !important;
-    height: auto !important;
-  }
-
+  canvas,
   #overview-chart,
   #chart {
+    display: block !important;
+    width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
+  }
+
+  #goal-list,
+  #goal-panel {
+    display: block !important;
+  }
+
+  #heatmap-section,
+  #calendar {
+    overflow-x: auto;
   }
 
   #goal-panel input[type="number"],
