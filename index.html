@@ -41,7 +41,7 @@
     <div id="tooltip" class="tooltip"></div>
   </section>
 
-  <section>
+  <section id="chart-section">
     <h2>View Chart</h2>
     <label>Chart Type:
       <select id="chart-type">
@@ -62,7 +62,18 @@
       <label><input type="checkbox" value="6" checked>Sat</label>
     </div>
     <button id="show-chart">Show Chart</button>
-    <canvas id="chart"></canvas>
+<div id="chart-goal-container">
+  <div id="chart-container">
+    <canvas id="chart" width="400" height="200"></canvas>
+  </div>
+  <div id="goal-panel">
+    <div id="goal-toggle">
+      <button data-mode="daily" class="active">Daily</button>
+      <button data-mode="weekly">Weekly</button>
+    </div>
+    <div id="goal-list"></div>
+  </div>
+</div>
   </section>
 
   <script src="script.js"></script>

@@ -26,6 +26,8 @@
   let currentWeekStart = getWeekStart(new Date());
   let entries = JSON.parse(localStorage.getItem('entries') || '[]');
   let categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
+  let categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
+  let goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
 
   function saveColors() {
     localStorage.setItem('categoryColors', JSON.stringify(categoryColors));
@@ -33,6 +35,14 @@
 
   function saveEntries() {
     localStorage.setItem('entries', JSON.stringify(entries));
+  }
+
+  function saveCategoryList() {
+    localStorage.setItem('categoryList', JSON.stringify(categoryList));
+  }
+
+  function saveGoals() {
+    localStorage.setItem('goals', JSON.stringify(goals));
   }
 
   function parseLocalDate(str) {
@@ -55,7 +65,7 @@
       return d;
     });
     const dayKeys = days.map(d => d.toISOString().slice(0, 10));
-    const categories = [...new Set(entries.filter(e => dayKeys.includes(e.date)).map(e => e.category))];
+    const categories = categoryList.slice();
     const datasets = days.map((d, idx) => {
       const data = categories.map(cat => {
         return entries.filter(e => e.category === cat && e.date === d.toISOString().slice(0, 10)).reduce((s, e) => s + e.hours, 0);
@@ -170,6 +180,9 @@
     });
     const keys = days.map(d => d.toISOString().slice(0, 10));
     const totals = {};
+    categoryList.forEach(cat => {
+      totals[cat] = {};
+    });
     entries.forEach(e => {
       if (keys.includes(e.date)) {
         totals[e.category] = totals[e.category] || {};
@@ -178,10 +191,10 @@
     });
 
     const weeklyTotals = {};
-    Object.keys(totals).forEach(cat => {
+    categoryList.forEach(cat => {
       weeklyTotals[cat] = keys.reduce((sum, k) => sum + (totals[cat][k] || 0), 0);
     });
-    const sorted = Object.keys(weeklyTotals).sort((a, b) => weeklyTotals[b] - weeklyTotals[a]);
+    const sorted = categoryList.slice().sort((a, b) => weeklyTotals[b] - weeklyTotals[a]);
 
     let html = '<tr><th>Category</th>' +
       keys.map(k => '<th>' + parseLocalDate(k).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</th>').join('') +
@@ -211,6 +224,7 @@
           td.classList.add('edited');
           setTimeout(() => td.classList.remove('edited'), 800);
           renderCategoryOverview();
+          renderGoalPanel();
         }
       });
     });
@@ -482,8 +496,81 @@
     }
   }
 
+  const goalListEl = document.getElementById('goal-list');
+  const goalToggleButtons = document.querySelectorAll('#goal-toggle button');
+  let goalMode = 'daily';
+
+  goalToggleButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      goalToggleButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      goalMode = btn.dataset.mode;
+      renderGoalPanel();
+    });
+  });
+
+  function getActualForCategory(cat, mode) {
+    if (mode === 'daily') {
+      const today = new Date().toISOString().slice(0, 10);
+      return entries.filter(e => e.category === cat && e.date === today).reduce((s, e) => s + e.hours, 0);
+    }
+    const start = getWeekStart(new Date());
+    const keys = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d.toISOString().slice(0, 10);
+    });
+    return entries.filter(e => e.category === cat && keys.includes(e.date)).reduce((s, e) => s + e.hours, 0);
+  }
+
+  function renderGoalPanel() {
+    goalListEl.innerHTML = '';
+    categoryList.forEach(cat => {
+      const item = document.createElement('div');
+      item.className = 'goal-item';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'goal-cat';
+      nameSpan.textContent = cat;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = '0.1';
+      input.placeholder = 'Set Goal';
+      input.value = goals[goalMode][cat] !== undefined ? goals[goalMode][cat] : '';
+      input.addEventListener('change', () => {
+        const val = parseFloat(input.value);
+        if (isNaN(val)) {
+          delete goals[goalMode][cat];
+        } else {
+          goals[goalMode][cat] = val;
+        }
+        saveGoals();
+        renderGoalPanel();
+      });
+
+      const progress = document.createElement('div');
+      progress.className = 'progress';
+      const bar = document.createElement('span');
+      const goalVal = goals[goalMode][cat];
+      const actual = getActualForCategory(cat, goalMode);
+      if (goalVal) {
+        const pct = Math.min(100, (actual / goalVal) * 100);
+        bar.style.width = pct + '%';
+        if (actual >= goalVal) progress.classList.add('met');
+        else if (actual >= goalVal * 0.8) progress.classList.add('close');
+        else progress.classList.add('missed');
+      }
+      progress.appendChild(bar);
+
+      item.appendChild(nameSpan);
+      item.appendChild(input);
+      item.appendChild(progress);
+      goalListEl.appendChild(item);
+    });
+  }
+
   // initial render
   renderCategoryOverview();
+  renderGoalPanel();
 
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -497,10 +584,15 @@
         categoryColors[entry.category] = colorInput.value || '#888888';
         saveColors();
       }
+      if (!categoryList.includes(entry.category)) {
+        categoryList.push(entry.category);
+        saveCategoryList();
+      }
       entries.push(entry);
       saveEntries();
       form.reset();
       renderCategoryOverview();
+      renderGoalPanel();
     }
   });
 
@@ -611,15 +703,20 @@
   prevWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
     renderCategoryOverview();
+    renderGoalPanel();
   });
   nextWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     renderCategoryOverview();
+    renderGoalPanel();
   });
 
   window.addEventListener('storage', () => {
     entries = JSON.parse(localStorage.getItem('entries') || '[]');
     categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
     renderCategoryOverview();
+    categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
+    goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+    renderGoalPanel();
   });
 })();

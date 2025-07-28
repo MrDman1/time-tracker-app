@@ -101,35 +101,121 @@ canvas {
   transition: background-color 0.5s;
 }
 
+/* chart and goal panel layout */
+#chart-goal-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#chart-container {
+  flex: 0 0 60%;
+}
+
+#goal-panel {
+  flex: 0 0 40%;
+  border: 1px solid #ccc;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+#goal-panel #goal-toggle {
+  margin-bottom: 10px;
+}
+
+#goal-panel #goal-toggle button {
+  margin-right: 5px;
+}
+
+#goal-panel #goal-toggle button.active {
+  font-weight: bold;
+}
+
+#goal-list .goal-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 6px;
+}
+
+#goal-list .goal-item span.goal-cat {
+  flex: 1;
+}
+
+#goal-list .goal-item input {
+  width: 60px;
+}
+
+#goal-list .progress {
+  flex: 1;
+  height: 10px;
+  background: #eee;
+  position: relative;
+}
+
+#goal-list .progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+}
+
+#goal-list .progress.met span {
+  background: #4caf50;
+}
+
+#goal-list .progress.close span {
+  background: #ffeb3b;
+}
+
+#goal-list .progress.missed span {
+  background: #f44336;
+}
+
+#chart {
+  max-width: 400px;
+}
+
 @media (max-width: 600px) {
   body {
     margin: 10px;
     font-size: 14px;
   }
+
   form label {
     display: block;
     margin: 0 0 10px;
   }
+
   #week-controls {
     flex-direction: column;
     align-items: flex-start;
   }
+
   #calendar {
     grid-template-columns: repeat(7, minmax(40px, 1fr));
   }
+
   #calendar .day {
     height: 60px;
     font-size: 10px;
   }
+
   #calendar .day .dow {
     font-size: 8px;
   }
+
   #heatmap-section th,
   #heatmap-section td {
     padding: 2px;
     font-size: 12px;
   }
+
   section {
     margin-bottom: 20px;
+  }
+
+  #chart-container,
+  #goal-panel {
+    flex: 0 0 100%;
   }
 }
