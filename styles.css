@@ -2,6 +2,21 @@ body { font-family: Arial, sans-serif; margin: 20px; }
 form label { margin-right: 10px; }
 section { margin-bottom: 30px; }
 #day-filter label { margin-right: 6px; }
+#day-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+}
+
+#heatmap-section,
+#calendar {
+  overflow-x: auto;
+}
 
 #week-controls {
   margin: 10px 0;
@@ -71,6 +86,7 @@ section { margin-bottom: 30px; }
 #heatmap-section table {
   border-collapse: collapse;
   width: 100%;
+  min-width: 480px;
 }
 #heatmap-section th,
 #heatmap-section td {
@@ -160,6 +176,44 @@ section { margin-bottom: 30px; }
 }
 
 @media (max-width: 600px) {
+  body {
+    margin: 10px;
+    font-size: 14px;
+  }
+
+  form label {
+    display: block;
+    margin: 0 0 10px;
+  }
+
+  #week-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #calendar {
+    grid-template-columns: repeat(7, minmax(40px, 1fr));
+  }
+
+  #calendar .day {
+    height: 60px;
+    font-size: 10px;
+  }
+
+  #calendar .day .dow {
+    font-size: 8px;
+  }
+
+  #heatmap-section th,
+  #heatmap-section td {
+    padding: 2px;
+    font-size: 12px;
+  }
+
+  section {
+    margin-bottom: 20px;
+  }
+
   #chart-container,
   #goal-panel {
     flex: 0 0 100%;

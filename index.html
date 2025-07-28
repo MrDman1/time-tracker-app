@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Time Tracker</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -61,18 +62,18 @@
       <label><input type="checkbox" value="6" checked>Sat</label>
     </div>
     <button id="show-chart">Show Chart</button>
-    <div id="chart-goal-container">
-      <div id="chart-container">
-        <canvas id="chart" width="400" height="200"></canvas>
-      </div>
-      <div id="goal-panel">
-        <div id="goal-toggle">
-          <button data-mode="daily" class="active">Daily</button>
-          <button data-mode="weekly">Weekly</button>
-        </div>
-        <div id="goal-list"></div>
-      </div>
+<div id="chart-goal-container">
+  <div id="chart-container">
+    <canvas id="chart" width="400" height="200"></canvas>
+  </div>
+  <div id="goal-panel">
+    <div id="goal-toggle">
+      <button data-mode="daily" class="active">Daily</button>
+      <button data-mode="weekly">Weekly</button>
     </div>
+    <div id="goal-list"></div>
+  </div>
+</div>
   </section>
 
   <script src="script.js"></script>
