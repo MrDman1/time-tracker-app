@@ -19,6 +19,7 @@
   const prevWeekBtn = document.getElementById('prev-week');
   const nextWeekBtn = document.getElementById('next-week');
   const weekLabel = document.getElementById('week-label');
+  const weekControls = document.getElementById('week-controls');
 
   let chart;
   let overviewChart;
@@ -135,13 +136,11 @@
   }
 
   function renderWeekHeatmap() {
-    const now = new Date();
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      days.push(d);
-    }
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(currentWeekStart);
+      d.setDate(currentWeekStart.getDate() + i);
+      return d;
+    });
     const keys = days.map(d => d.toISOString().slice(0, 10));
     const totals = {};
     entries.forEach(e => {
@@ -169,6 +168,7 @@
       html += '</tr>';
     });
     heatmapTable.innerHTML = html;
+    weekLabel.textContent = `${days[0].toLocaleDateString()} - ${days[6].toLocaleDateString()}`;
     heatmapTable.querySelectorAll('td[data-cat]').forEach(td => {
       td.addEventListener('click', () => {
         const cat = td.dataset.cat;
@@ -183,7 +183,7 @@
           saveEntries();
           td.classList.add('edited');
           setTimeout(() => td.classList.remove('edited'), 800);
-          renderView();
+          renderCategoryOverview();
         }
       });
     });
@@ -435,16 +435,28 @@
     a.remove();
   }
 
-  function renderView() {
+  function renderCategoryOverview() {
     if (rangeSelect.value === 'month') {
       renderMonthCalendar();
+      heatmapTable.innerHTML = '';
+      heatmapTable.style.display = 'none';
+      calendarEl.style.display = 'grid';
+      weekControls.style.display = 'none';
     } else {
-      renderWeekChart();
+      renderWeekHeatmap();
+      calendarEl.innerHTML = '';
+      calendarEl.style.display = 'none';
+      heatmapTable.style.display = 'table';
+      weekControls.style.display = 'flex';
+      if (overviewChart) {
+        overviewChart.destroy();
+        overviewChart = null;
+      }
     }
   }
 
   // initial render
-  renderView();
+  renderCategoryOverview();
 
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -461,7 +473,7 @@
       entries.push(entry);
       saveEntries();
       form.reset();
-      renderView();
+      renderCategoryOverview();
     }
   });
 
@@ -567,20 +579,20 @@
 
   showChartBtn.addEventListener('click', renderChart);
   dayFilterInputs.forEach(cb => cb.addEventListener('change', renderChart));
-  rangeSelect.addEventListener('change', renderView);
+  rangeSelect.addEventListener('change', renderCategoryOverview);
   exportBtn.addEventListener('click', exportToExcel);
   prevWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-    renderView();
+    renderCategoryOverview();
   });
   nextWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-    renderView();
+    renderCategoryOverview();
   });
 
   window.addEventListener('storage', () => {
     entries = JSON.parse(localStorage.getItem('entries') || '[]');
     categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
-    renderView();
+    renderCategoryOverview();
   });
 })();

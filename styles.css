@@ -49,3 +49,20 @@ section { margin-bottom: 30px; }
   z-index: 100;
   display: none;
 }
+
+#heatmap-section table {
+  border-collapse: collapse;
+  width: 100%;
+}
+#heatmap-section th,
+#heatmap-section td {
+  border: 1px solid #ccc;
+  padding: 4px;
+  background: #f9f9f9;
+  font-weight: bold;
+  text-align: center;
+}
+#heatmap-section td.edited {
+  background: yellow;
+  transition: background-color 0.5s;
+}
