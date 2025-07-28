@@ -84,12 +84,32 @@
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     calendarEl.innerHTML = '';
+
+    const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    dows.forEach(dow => {
+      const h = document.createElement('div');
+      h.className = 'day-header';
+      h.textContent = dow;
+      calendarEl.appendChild(h);
+    });
+
+    const startOffset = (start.getDay() + 6) % 7;
+    for (let i = 0; i < startOffset; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'day empty';
+      calendarEl.appendChild(empty);
+    }
+
     for (let i = 1; i <= daysInMonth; i++) {
       const d = new Date(start);
       d.setDate(i);
       const key = d.toISOString().slice(0, 10);
       const cell = document.createElement('div');
       cell.className = 'day';
+      const dowSpan = document.createElement('span');
+      dowSpan.className = 'dow';
+      dowSpan.textContent = d.toLocaleDateString(undefined, { weekday: 'short' });
+      cell.appendChild(dowSpan);
       const dateSpan = document.createElement('span');
       dateSpan.className = 'date';
       dateSpan.textContent = i;
@@ -126,6 +146,13 @@
         tooltipEl.style.display = 'none';
       });
       calendarEl.appendChild(cell);
+    }
+
+    const endBlanks = (7 - ((startOffset + daysInMonth) % 7)) % 7;
+    for (let i = 0; i < endBlanks; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'day empty';
+      calendarEl.appendChild(empty);
     }
     if (overviewChart) {
       overviewChart.destroy();
