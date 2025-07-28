@@ -187,16 +187,35 @@ canvas {
 
   form label {
     display: block;
-    margin: 0 0 10px;
+    margin-bottom: 10px;
+  }
+
+  #entry-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   #week-controls {
     flex-direction: column;
     align-items: flex-start;
+    gap: 4px;
+  }
+
+  #heatmap-section table {
+    font-size: 12px;
+    overflow-x: scroll;
+    display: block;
+  }
+
+  #heatmap-section th,
+  #heatmap-section td {
+    padding: 2px;
   }
 
   #calendar {
     grid-template-columns: repeat(7, minmax(40px, 1fr));
+    font-size: 10px;
   }
 
   #calendar .day {
@@ -208,18 +227,43 @@ canvas {
     font-size: 8px;
   }
 
-  #heatmap-section th,
-  #heatmap-section td {
-    padding: 2px;
-    font-size: 12px;
+  #calendar .segments {
+    height: 50%;
   }
 
-  section {
-    margin-bottom: 20px;
+  #chart-goal-container {
+    flex-direction: column;
   }
 
   #chart-container,
   #goal-panel {
     flex: 0 0 100%;
+    width: 100%;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  #overview-chart,
+  #chart {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  #goal-panel input[type="number"],
+  #goal-panel button {
+    font-size: 12px;
+    padding: 4px;
+  }
+
+  #goal-panel .goal-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  section {
+    margin-bottom: 20px;
   }
 }
