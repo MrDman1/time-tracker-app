@@ -146,7 +146,8 @@ canvas {
 }
 
 #goal-list .goal-item input {
-  width: 60px;
+  flex: 0.2;
+  min-width: 60px;
 }
 
 #goal-list .progress {
