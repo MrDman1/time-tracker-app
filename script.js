@@ -7,6 +7,7 @@
   const chartTypeSelect = document.getElementById('chart-type');
   const startDateInput = document.getElementById('start-date');
   const endDateInput = document.getElementById('end-date');
+  const dayFilterInputs = document.querySelectorAll('#day-filter input[type="checkbox"]');
   const showChartBtn = document.getElementById('show-chart');
   const ctx = document.getElementById('chart').getContext('2d');
   const heatmapTable = document.getElementById('heatmap');
@@ -23,6 +24,10 @@
 
   function saveEntries() {
     localStorage.setItem('entries', JSON.stringify(entries));
+  }
+
+  function parseLocalDate(str) {
+    return new Date(str + 'T00:00');
   }
 
   function renderWeekHeatmap() {
@@ -49,7 +54,7 @@
     const sorted = Object.keys(weeklyTotals).sort((a, b) => weeklyTotals[b] - weeklyTotals[a]);
 
     let html = '<tr><th>Category</th>' +
-      keys.map(k => '<th>' + new Date(k).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</th>').join('') +
+      keys.map(k => '<th>' + parseLocalDate(k).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</th>').join('') +
       '</tr>';
     sorted.forEach(cat => {
       html += '<tr><td>' + cat + '</td>';
@@ -259,7 +264,7 @@
       d.setDate(now.getDate() - i);
       weekKeys.push(d.toISOString().slice(0, 10));
     }
-    const weekHeader = ['Category'].concat(weekKeys.map(k => new Date(k).toLocaleDateString()));
+    const weekHeader = ['Category'].concat(weekKeys.map(k => parseLocalDate(k).toLocaleDateString()));
     const cats = [...new Set(entries.map(e => e.category))];
     const weekSheet = workbook.addWorksheet('Weekly Summary');
     let startRow = addImage(weekSheet, createWeeklyChartImage());
@@ -358,12 +363,19 @@
     }
   });
 
+  function getSelectedDays() {
+    return Array.from(dayFilterInputs)
+      .filter(cb => cb.checked)
+      .map(cb => parseInt(cb.value, 10));
+  }
+
   function getFilteredEntries() {
-    const start = startDateInput.value ? new Date(startDateInput.value) : null;
-    const end = endDateInput.value ? new Date(endDateInput.value) : null;
+    const start = startDateInput.value ? parseLocalDate(startDateInput.value) : null;
+    const end = endDateInput.value ? parseLocalDate(endDateInput.value) : null;
+    const allowedDays = getSelectedDays();
     return entries.filter(e => {
-      const d = new Date(e.date);
-      return (!start || d >= start) && (!end || d <= end);
+      const d = parseLocalDate(e.date);
+      return (!start || d >= start) && (!end || d <= end) && allowedDays.includes(d.getDay());
     });
   }
 
@@ -375,20 +387,23 @@
 
     if (type === 'line') {
       const start = startDateInput.value
-        ? new Date(startDateInput.value)
+        ? parseLocalDate(startDateInput.value)
         : filtered.length
-          ? new Date(Math.min(...filtered.map(e => new Date(e.date))))
+          ? new Date(Math.min(...filtered.map(e => parseLocalDate(e.date).getTime())))
           : new Date();
       const end = endDateInput.value
-        ? new Date(endDateInput.value)
+        ? parseLocalDate(endDateInput.value)
         : filtered.length
-          ? new Date(Math.max(...filtered.map(e => new Date(e.date))))
+          ? new Date(Math.max(...filtered.map(e => parseLocalDate(e.date).getTime())))
           : new Date();
 
+      const allowedDays = getSelectedDays();
       const dates = [];
       const d = new Date(start);
       while (d <= end) {
-        dates.push(d.toISOString().slice(0, 10));
+        if (allowedDays.includes(d.getDay())) {
+          dates.push(d.toISOString().slice(0, 10));
+        }
         d.setDate(d.getDate() + 1);
       }
 
@@ -449,6 +464,7 @@
   }
 
   showChartBtn.addEventListener('click', renderChart);
+  dayFilterInputs.forEach(cb => cb.addEventListener('change', renderChart));
   rangeSelect.addEventListener('change', renderView);
   exportBtn.addEventListener('click', exportToExcel);
 
