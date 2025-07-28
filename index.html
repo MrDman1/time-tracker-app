@@ -26,11 +26,17 @@
       <select id="time-range">
         <option value="week">Week</option>
         <option value="month">Month</option>
-        <option value="year">Year</option>
       </select>
     </label>
     <button id="export-excel">Export to Excel</button>
-    <table id="heatmap"></table>
+    <div id="week-controls">
+      <button id="prev-week">&#8592;</button>
+      <span id="week-label"></span>
+      <button id="next-week">&#8594;</button>
+    </div>
+    <canvas id="overview-chart"></canvas>
+    <div id="calendar"></div>
+    <div id="tooltip" class="tooltip"></div>
   </section>
 
   <section>

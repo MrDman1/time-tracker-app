@@ -13,8 +13,16 @@
   const heatmapTable = document.getElementById('heatmap');
   const rangeSelect = document.getElementById('time-range');
   const exportBtn = document.getElementById('export-excel');
+  const overviewCtx = document.getElementById('overview-chart').getContext('2d');
+  const calendarEl = document.getElementById('calendar');
+  const tooltipEl = document.getElementById('tooltip');
+  const prevWeekBtn = document.getElementById('prev-week');
+  const nextWeekBtn = document.getElementById('next-week');
+  const weekLabel = document.getElementById('week-label');
 
   let chart;
+  let overviewChart;
+  let currentWeekStart = getWeekStart(new Date());
   let entries = JSON.parse(localStorage.getItem('entries') || '[]');
   let categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
 
@@ -28,6 +36,102 @@
 
   function parseLocalDate(str) {
     return new Date(str + 'T00:00');
+  }
+
+  function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - ((day + 6) % 7);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function renderWeekChart() {
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(currentWeekStart);
+      d.setDate(currentWeekStart.getDate() + i);
+      return d;
+    });
+    const dayKeys = days.map(d => d.toISOString().slice(0, 10));
+    const categories = [...new Set(entries.filter(e => dayKeys.includes(e.date)).map(e => e.category))];
+    const datasets = days.map((d, idx) => {
+      const data = categories.map(cat => {
+        return entries.filter(e => e.category === cat && e.date === d.toISOString().slice(0, 10)).reduce((s, e) => s + e.hours, 0);
+      });
+      return {
+        label: d.toLocaleDateString(undefined, { weekday: 'short' }),
+        data,
+        backgroundColor: `hsl(${idx * 40},70%,60%)`
+      };
+    });
+    if (overviewChart) overviewChart.destroy();
+    overviewChart = new Chart(overviewCtx, {
+      type: 'bar',
+      data: { labels: categories, datasets },
+      options: {
+        indexAxis: 'y',
+        scales: { x: { beginAtZero: true } },
+        responsive: true,
+      }
+    });
+    weekLabel.textContent = `${days[0].toLocaleDateString()} - ${days[6].toLocaleDateString()}`;
+    calendarEl.innerHTML = '';
+  }
+
+  function renderMonthCalendar() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    calendarEl.innerHTML = '';
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(start);
+      d.setDate(i);
+      const key = d.toISOString().slice(0, 10);
+      const cell = document.createElement('div');
+      cell.className = 'day';
+      const dateSpan = document.createElement('span');
+      dateSpan.className = 'date';
+      dateSpan.textContent = i;
+      cell.appendChild(dateSpan);
+      const segContainer = document.createElement('div');
+      segContainer.className = 'segments';
+      const totals = {};
+      entries.filter(e => e.date === key).forEach(e => {
+        totals[e.category] = (totals[e.category] || 0) + e.hours;
+      });
+      const totalHours = Object.values(totals).reduce((a, b) => a + b, 0);
+      const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      sorted.slice(0, 2).forEach(([cat, hrs]) => {
+        const seg = document.createElement('div');
+        seg.style.background = categoryColors[cat] || '#ccc';
+        seg.style.width = totalHours ? `${(hrs / totalHours) * 100}%` : '0%';
+        segContainer.appendChild(seg);
+      });
+      cell.appendChild(segContainer);
+      cell.addEventListener('mouseenter', e => {
+        if (!totalHours) return;
+        tooltipEl.style.display = 'block';
+        const lines = sorted.map(([cat, hrs]) => {
+          const pct = ((hrs / totalHours) * 100).toFixed(1);
+          return `${cat}: ${pct}%`;
+        });
+        tooltipEl.innerHTML = lines.join('<br>');
+      });
+      cell.addEventListener('mousemove', e => {
+        tooltipEl.style.left = e.pageX + 10 + 'px';
+        tooltipEl.style.top = e.pageY + 10 + 'px';
+      });
+      cell.addEventListener('mouseleave', () => {
+        tooltipEl.style.display = 'none';
+      });
+      calendarEl.appendChild(cell);
+    }
+    if (overviewChart) {
+      overviewChart.destroy();
+      overviewChart = null;
+    }
+    weekLabel.textContent = '';
   }
 
   function renderWeekHeatmap() {
@@ -333,11 +437,9 @@
 
   function renderView() {
     if (rangeSelect.value === 'month') {
-      renderMonthChart();
-    } else if (rangeSelect.value === 'year') {
-      renderYearChart();
+      renderMonthCalendar();
     } else {
-      renderWeekHeatmap();
+      renderWeekChart();
     }
   }
 
@@ -467,6 +569,14 @@
   dayFilterInputs.forEach(cb => cb.addEventListener('change', renderChart));
   rangeSelect.addEventListener('change', renderView);
   exportBtn.addEventListener('click', exportToExcel);
+  prevWeekBtn.addEventListener('click', () => {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    renderView();
+  });
+  nextWeekBtn.addEventListener('click', () => {
+    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    renderView();
+  });
 
   window.addEventListener('storage', () => {
     entries = JSON.parse(localStorage.getItem('entries') || '[]');

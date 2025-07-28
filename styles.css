@@ -3,15 +3,49 @@ form label { margin-right: 10px; }
 section { margin-bottom: 30px; }
 #day-filter label { margin-right: 6px; }
 
-#heatmap-section table { border-collapse: collapse; width: 100%; }
-#heatmap-section th, #heatmap-section td {
-  border: 1px solid #ccc;
-  padding: 4px;
-  background: #f9f9f9;
-  font-weight: bold;
-  text-align: center;
+#week-controls {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-#heatmap-section td.edited {
-  background: yellow;
-  transition: background-color 0.5s;
+
+#overview-chart { width: 100%; max-height: 300px; }
+
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+#calendar .day {
+  border: 1px solid #ccc;
+  height: 80px;
+  position: relative;
+  background: #f9f9f9;
+  font-size: 12px;
+}
+#calendar .date {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+}
+#calendar .segments {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
+  height: 60%;
+  display: flex;
+}
+#calendar .segments div { height: 100%; }
+
+.tooltip {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #333;
+  padding: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 100;
+  display: none;
 }
