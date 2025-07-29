@@ -697,8 +697,30 @@ let goalMode = 'weekly';
     goalListEl.innerHTML = '';
     const mode = getGoalMode();
     const key = getGoalKey(mode);
+
+    const categorySet = new Set();
+    entries.forEach(e => {
+      const eDate = new Date(e.date);
+      if (mode === 'weekly') {
+        const start = new Date(currentWeekStart);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        if (eDate >= start && eDate <= end) categorySet.add(e.category);
+      } else {
+        const start = new Date(currentMonthStart);
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        if (eDate >= start && eDate <= end) categorySet.add(e.category);
+      }
+    });
+
+    const categories = Array.from(categorySet).sort();
+
     const currentGoals = goals[mode][key] || {};
-    categoryList.forEach(cat => {
+
+    console.log('Current goal mode:', getGoalMode(), 'Goal key:', getGoalKey());
+    console.log('Visible categories:', categories);
+
+    categories.forEach(cat => {
       const item = document.createElement('div');
       item.className = 'goal-item';
       const nameSpan = document.createElement('span');
