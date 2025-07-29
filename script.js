@@ -913,38 +913,35 @@ let goalMode = 'weekly';
   showChartBtn.addEventListener('click', renderChart);
   dayFilterInputs.forEach(cb => cb.addEventListener('change', renderChart));
   rangeSelect.addEventListener('change', () => {
-    const range = rangeSelect.value;
-    goalMode = range === 'month' ? 'monthly' : 'weekly';
-
-    if (goalMode === 'monthly') {
-      const now = new Date();
+    const now = new Date();
+    if (rangeSelect.value === 'month') {
       currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else {
+      currentWeekStart = getWeekStart(now);
     }
-
+    goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
     renderCategoryOverview();
     renderGoalPanel();
   });
   exportBtn.addEventListener('click', exportToExcel);
-    prevWeekBtn.addEventListener('click', () => {
-      if (goalMode === 'monthly') {
-        currentMonthStart.setMonth(currentMonthStart.getMonth() - 1);
-      } else {
-        currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-      }
-      renderCategoryOverview();
-      goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
-      renderGoalPanel();
-    });
-    nextWeekBtn.addEventListener('click', () => {
-      if (goalMode === 'monthly') {
-        currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
-      } else {
-        currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-      }
-      renderCategoryOverview();
-      goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
-      renderGoalPanel();
-    });
+  prevWeekBtn.addEventListener('click', () => {
+    if (rangeSelect.value === 'month') {
+      currentMonthStart.setMonth(currentMonthStart.getMonth() - 1);
+    } else {
+      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    }
+    renderCategoryOverview();
+    renderGoalPanel();
+  });
+  nextWeekBtn.addEventListener('click', () => {
+    if (rangeSelect.value === 'month') {
+      currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
+    } else {
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
+    renderCategoryOverview();
+    renderGoalPanel();
+  });
 
   window.addEventListener('storage', () => {
     if (auth.currentUser) return;
