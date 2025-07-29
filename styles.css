@@ -133,6 +133,14 @@ canvas {
   box-sizing: border-box;
 }
 
+/* Visual style based on goal mode */
+.goal-panel.weekly {
+  border-left: 4px solid #2d8cf0;
+}
+.goal-panel.monthly {
+  border-left: 4px solid #f39c12;
+}
+
 #goal-panel #goal-toggle {
   margin-bottom: 10px;
 }
