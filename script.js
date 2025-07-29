@@ -633,17 +633,17 @@
   }
 
   function renderCategoryOverview() {
+    const now = new Date();
+
     if (rangeSelect.value === 'month') {
-      const now = new Date();
-      if (!currentMonthStart || currentMonthStart.getMonth() !== now.getMonth()) {
-        currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
+      currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       renderMonthCalendar();
+      calendarEl.style.display = 'grid';
       heatmapTable.innerHTML = '';
       heatmapTable.style.display = 'none';
-      calendarEl.style.display = 'grid';
       weekControls.style.display = 'none';
     } else {
+      currentWeekStart = getWeekStart(now);
       renderWeekHeatmap();
       calendarEl.innerHTML = '';
       calendarEl.style.display = 'none';
@@ -654,10 +654,10 @@
         overviewChart = null;
       }
     }
-    renderChart();
+
     goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
     renderGoalPanel();
-    console.log('Category overview rendered');
+    renderChart();
   }
 
 const goalListEl = document.getElementById('goal-list');
@@ -699,16 +699,16 @@ let goalMode = 'weekly';
   function renderGoalPanel() {
     document.getElementById("goal-panel").className = "goal-panel " + goalMode;
     goalListEl.innerHTML = '';
+
     const mode = getGoalMode();
     const key = getGoalKey(mode);
 
-    const categorySet = new Set();
+    if (!goals[mode][key]) goals[mode][key] = {};
 
-    // Add categories from saved goals (even if no entries exist)
-    const currentGoals = goals[mode][key] || {};
-    Object.keys(currentGoals).forEach(cat => categorySet.add(cat));
+    const currentGoals = goals[mode][key];
+    const categorySet = new Set(Object.keys(currentGoals));
 
-    // Add categories from actual entries in the selected week/month
+    // Add categories from entries in the current view
     entries.forEach(e => {
       const eDate = new Date(e.date);
       if (mode === 'weekly') {
