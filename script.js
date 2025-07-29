@@ -709,14 +709,24 @@
       input.type = 'number';
       input.step = '0.1';
       input.placeholder = 'Set Goal';
-      input.value = goals[goalMode][cat] !== undefined ? goals[goalMode][cat] : '';
-      input.addEventListener('change', () => {
-        const val = parseFloat(input.value);
-        if (isNaN(val)) {
-          delete goals[goalMode][cat];
+      let originalVal = goals[goalMode][cat] ?? '';
+      input.value = originalVal;
+
+      input.addEventListener('input', () => {
+        input.dataset.dirty = 'true';
+      });
+
+      input.addEventListener('blur', () => {
+        if (input.dataset.dirty !== 'true') return;
+
+        const newVal = parseFloat(input.value);
+        if (!isNaN(newVal)) {
+          goals[goalMode][cat] = newVal;
         } else {
-          goals[goalMode][cat] = val;
+          delete goals[goalMode][cat];
         }
+
+        delete input.dataset.dirty;
         saveGoals();
         renderGoalPanel();
       });
