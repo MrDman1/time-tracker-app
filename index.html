@@ -11,14 +11,14 @@
 <body>
   <h1>Time Tracker</h1>
   <div id="auth-panel">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+    <input type="email" id="email" placeholder="Email" value="damian.beland@hotmail.com">
+    <input type="password" id="password" placeholder="Password" value="240676">
     <button id="signup-btn">Sign Up</button>
     <button id="login-btn">Login</button>
     <button id="logout-btn" style="display:none;">Logout</button>
     <span id="user-info"></span>
   </div>
-  <section>
+  <section class="hidden">
     <h2>Add Entry</h2>
     <form id="entry-form">
       <label>Category: <input type="text" id="category" required></label>
@@ -29,7 +29,7 @@
     </form>
   </section>
 
-  <section id="heatmap-section">
+  <section id="heatmap-section" class="hidden">
     <h2>Category Overview</h2>
     <label>View:
       <select id="time-range">
@@ -49,7 +49,7 @@
     <div id="tooltip" class="tooltip"></div>
   </section>
 
-  <section id="chart-section">
+  <section id="chart-section" class="hidden">
     <h2>View Chart</h2>
     <label>Chart Type:
       <select id="chart-type">
