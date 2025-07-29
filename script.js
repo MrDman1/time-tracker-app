@@ -125,9 +125,8 @@
   }
 
   function renderMonthCalendar() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const start = new Date(currentMonthStart);
+    const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
     calendarEl.innerHTML = '';
 
     const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -387,9 +386,8 @@
   }
 
   function renderMonthChart() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const start = new Date(currentMonthStart);
+    const daysInMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
     const labels = [];
     const data = [];
     for (let i = 1; i <= daysInMonth; i++) {
@@ -721,13 +719,6 @@ let goalMode = 'weekly';
 
     const currentGoals = goals[mode][key];
 
-    const categorySet = new Set();
-    Object.keys(currentGoals).forEach(cat => categorySet.add(cat));
-    entries.forEach(e => categorySet.add(e.category));
-    Object.keys(categoryColors).forEach(cat => categorySet.add(cat));
-
-    const categories = Array.from(categorySet).sort();
-
     const activeSet = new Set();
     entries.forEach(e => {
       const eDate = new Date(e.date);
@@ -742,6 +733,11 @@ let goalMode = 'weekly';
         if (eDate >= start && eDate <= end) activeSet.add(e.category);
       }
     });
+
+    const categories = Array.from(new Set([
+      ...Object.keys(currentGoals),
+      ...activeSet
+    ])).sort();
 
     console.log('Current goal mode:', getGoalMode(), 'Goal key:', getGoalKey());
     console.log('Visible categories:', categories);
@@ -960,7 +956,6 @@ let goalMode = 'weekly';
       currentWeekStart.setDate(currentWeekStart.getDate() - 7);
     }
     renderCategoryOverview();
-    renderGoalPanel();
   });
   nextWeekBtn.addEventListener('click', () => {
     if (rangeSelect.value === 'month') {
@@ -969,7 +964,6 @@ let goalMode = 'weekly';
       currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     }
     renderCategoryOverview();
-    renderGoalPanel();
   });
 
   window.addEventListener('storage', () => {
