@@ -603,8 +603,7 @@
     console.log('Goal panel rendered');
   }
 
-  // initial render
-  renderView();
+
 
   form.addEventListener('submit', e => {
     e.preventDefault();
