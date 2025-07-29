@@ -27,6 +27,7 @@
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
   const userInfo = document.getElementById("user-info");
+  const sections = document.querySelectorAll('section');
   const auth = firebase.auth();
   const db = firebase.firestore();
   let chart;
@@ -36,6 +37,9 @@
   let categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
   let categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
   let goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+
+  // hide all main sections until authenticated
+  sections.forEach(s => s.classList.add('hidden'));
 
   // ensure category list includes all categories found in saved entries
   const allCategories = [...new Set(entries.map(e => e.category))];
@@ -774,40 +778,66 @@ signupBtn.addEventListener("click", () => {
   logoutBtn.addEventListener("click", () => {
     auth.signOut();
   });
-  auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(async user => {
     if (user) {
       signupBtn.style.display = "none";
       loginBtn.style.display = "none";
+      emailInput.style.display = "none";
+      passwordInput.style.display = "none";
       logoutBtn.style.display = "inline";
       userInfo.textContent = user.email;
-      db.collection("users").doc(user.uid).get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          entries = data.entries || [];
-          categoryColors = data.categoryColors || {};
-          categoryList = data.categoryList || [];
-          goals = data.goals || {daily:{},weekly:{}};
-        } else {
-          entries = [];
-          categoryColors = {};
-          categoryList = [];
-          goals = {daily:{},weekly:{}};
-        }
-        saveEntries();
-        saveColors();
-        saveCategoryList();
-        saveGoals();
-        renderView();
-      });
+
+      const localEntries = JSON.parse(localStorage.getItem("entries") || "[]");
+      const localColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
+      const localList = JSON.parse(localStorage.getItem("categoryList") || "[]");
+      const localGoals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
+      const hasLocal = localEntries.length || Object.keys(localColors).length || localList.length ||
+                       Object.keys(localGoals.daily || {}).length || Object.keys(localGoals.weekly || {}).length;
+
+      if (hasLocal) {
+        await db.collection("users").doc(user.uid).set({
+          entries: localEntries,
+          categoryColors: localColors,
+          categoryList: localList,
+          goals: localGoals
+        });
+        localStorage.removeItem("entries");
+        localStorage.removeItem("categoryColors");
+        localStorage.removeItem("categoryList");
+        localStorage.removeItem("goals");
+      }
+
+      const docSnap = await db.collection("users").doc(user.uid).get();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        entries = data.entries || [];
+        categoryColors = data.categoryColors || {};
+        categoryList = data.categoryList || [];
+        goals = data.goals || {daily:{},weekly:{}};
+      } else {
+        entries = [];
+        categoryColors = {};
+        categoryList = [];
+        goals = {daily:{},weekly:{}};
+      }
+      saveEntries();
+      saveColors();
+      saveCategoryList();
+      saveGoals();
+      sections.forEach(s => s.classList.remove('hidden'));
+      renderView();
     } else {
       signupBtn.style.display = "inline";
       loginBtn.style.display = "inline";
+      emailInput.style.display = "inline";
+      passwordInput.style.display = "inline";
       logoutBtn.style.display = "none";
       userInfo.textContent = "";
+      sections.forEach(s => s.classList.add('hidden'));
       entries = JSON.parse(localStorage.getItem("entries") || "[]");
       categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
       categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
-        goals = JSON.parse(localStorage.getItem("goals") || "{\"daily\":{},\"weekly\":{}}");
+      goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
       renderView();
     }
   });

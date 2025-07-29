@@ -1,4 +1,5 @@
 body { font-family: Arial, sans-serif; margin: 20px; }
+.hidden { display: none; }
 form label { margin-right: 10px; }
 section { margin-bottom: 30px; }
 #day-filter label { margin-right: 6px; }
