@@ -141,8 +141,13 @@ canvas {
   margin-right: 5px;
 }
 
+
 #goal-panel #goal-toggle button.active {
   font-weight: bold;
+}
+
+#goal-list {
+  transition: opacity 0.3s ease;
 }
 
 #goal-list .goal-item {

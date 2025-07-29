@@ -36,7 +36,9 @@
   let entries = JSON.parse(localStorage.getItem('entries') || '[]');
   let categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
   let categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
-  let goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+  let goals = JSON.parse(localStorage.getItem('goals') || '{"weekly":{},"monthly":{}}');
+  if (!goals.weekly) goals.weekly = {};
+  if (!goals.monthly) goals.monthly = {};
 
   // hide all main sections until authenticated
   sections.forEach(s => s.classList.add('hidden'));
@@ -654,29 +656,42 @@
 
   const goalListEl = document.getElementById('goal-list');
   const goalToggleButtons = document.querySelectorAll('#goal-toggle button');
-  let goalMode = 'daily';
+  let goalMode = 'weekly';
 
   goalToggleButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.classList.contains('active')) return;
       goalToggleButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      goalMode = btn.dataset.mode;
-      renderGoalPanel();
+      goalListEl.style.opacity = 0;
+      setTimeout(() => {
+        goalMode = btn.dataset.mode;
+        renderGoalPanel();
+        goalListEl.style.opacity = 1;
+      }, 300);
     });
   });
 
   function getActualForCategory(cat, mode) {
-    if (mode === 'daily') {
-      const today = new Date().toISOString().slice(0, 10);
-      return entries.filter(e => e.category === cat && e.date === today).reduce((s, e) => s + e.hours, 0);
+    if (mode === 'weekly') {
+      const start = new Date(currentWeekStart);
+      const keys = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        return d.toISOString().slice(0, 10);
+      });
+      return entries.filter(e => e.category === cat && keys.includes(e.date)).reduce((s, e) => s + e.hours, 0);
+    } else if (mode === 'monthly') {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const keys = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        keys.push(d.toISOString().slice(0, 10));
+      }
+      return entries.filter(e => e.category === cat && keys.includes(e.date)).reduce((s, e) => s + e.hours, 0);
     }
-    const start = getWeekStart(new Date());
-    const keys = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      return d.toISOString().slice(0, 10);
-    });
-    return entries.filter(e => e.category === cat && keys.includes(e.date)).reduce((s, e) => s + e.hours, 0);
+    return 0;
   }
 
   function renderGoalPanel() {
@@ -880,7 +895,9 @@
     categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
     renderCategoryOverview();
     categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
-    goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+    goals = JSON.parse(localStorage.getItem('goals') || '{"weekly":{},"monthly":{}}');
+    if (!goals.weekly) goals.weekly = {};
+    if (!goals.monthly) goals.monthly = {};
     renderGoalPanel();
   });
 signupBtn.addEventListener("click", () => {
@@ -933,7 +950,9 @@ signupBtn.addEventListener("click", () => {
       const localEntries = JSON.parse(localStorage.getItem('entries') || '[]');
       const localColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
       const localList = JSON.parse(localStorage.getItem('categoryList') || '[]');
-      const localGoals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+      const localGoals = JSON.parse(localStorage.getItem('goals') || '{"weekly":{},"monthly":{}}');
+      if (!localGoals.weekly) localGoals.weekly = {};
+      if (!localGoals.monthly) localGoals.monthly = {};
 
       const docRef = db.collection("users").doc(user.uid);
       const docSnap = await docRef.get();
@@ -941,14 +960,14 @@ signupBtn.addEventListener("click", () => {
       let cloudEntries = [];
       let cloudColors = {};
       let cloudList = [];
-      let cloudGoals = { daily: {}, weekly: {} };
+      let cloudGoals = { weekly: {}, monthly: {} };
 
       if (docSnap.exists) {
         const data = docSnap.data();
         cloudEntries = data.entries || [];
         cloudColors = data.categoryColors || {};
         cloudList = data.categoryList || [];
-        cloudGoals = data.goals || { daily: {}, weekly: {} };
+        cloudGoals = data.goals || { weekly: {}, monthly: {} };
       }
 
       if (localEntries.length > cloudEntries.length) {
@@ -987,7 +1006,9 @@ signupBtn.addEventListener("click", () => {
       entries = JSON.parse(localStorage.getItem("entries") || "[]");
       categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
       categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
-      goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
+      goals = JSON.parse(localStorage.getItem("goals") || '{"weekly":{},"monthly":{}}');
+      if (!goals.weekly) goals.weekly = {};
+      if (!goals.monthly) goals.monthly = {};
 
       const mergedCats = new Set(categoryList.concat(entries.map(e => e.category)));
       categoryList = Array.from(mergedCats);
