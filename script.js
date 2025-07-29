@@ -634,16 +634,19 @@
 
   function renderCategoryOverview() {
     const now = new Date();
-
     if (rangeSelect.value === 'month') {
-      currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      if (!currentMonthStart || isNaN(currentMonthStart.getTime())) {
+        currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
       renderMonthCalendar();
       calendarEl.style.display = 'grid';
       heatmapTable.innerHTML = '';
       heatmapTable.style.display = 'none';
       weekControls.style.display = 'none';
     } else {
-      currentWeekStart = getWeekStart(now);
+      if (!currentWeekStart || isNaN(currentWeekStart.getTime())) {
+        currentWeekStart = getWeekStart(now);
+      }
       renderWeekHeatmap();
       calendarEl.innerHTML = '';
       calendarEl.style.display = 'none';
@@ -706,24 +709,28 @@ let goalMode = 'weekly';
     if (!goals[mode][key]) goals[mode][key] = {};
 
     const currentGoals = goals[mode][key];
-    const categorySet = new Set(Object.keys(currentGoals));
 
-    // Add categories from entries in the current view
+    const categorySet = new Set();
+    Object.keys(currentGoals).forEach(cat => categorySet.add(cat));
+    entries.forEach(e => categorySet.add(e.category));
+    Object.keys(categoryColors).forEach(cat => categorySet.add(cat));
+
+    const categories = Array.from(categorySet).sort();
+
+    const activeSet = new Set();
     entries.forEach(e => {
       const eDate = new Date(e.date);
       if (mode === 'weekly') {
         const start = new Date(currentWeekStart);
         const end = new Date(start);
         end.setDate(end.getDate() + 6);
-        if (eDate >= start && eDate <= end) categorySet.add(e.category);
+        if (eDate >= start && eDate <= end) activeSet.add(e.category);
       } else {
         const start = new Date(currentMonthStart);
         const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-        if (eDate >= start && eDate <= end) categorySet.add(e.category);
+        if (eDate >= start && eDate <= end) activeSet.add(e.category);
       }
     });
-
-    const categories = Array.from(categorySet).sort();
 
     console.log('Current goal mode:', getGoalMode(), 'Goal key:', getGoalKey());
     console.log('Visible categories:', categories);
@@ -731,6 +738,9 @@ let goalMode = 'weekly';
     categories.forEach(cat => {
       const item = document.createElement('div');
       item.className = 'goal-item';
+      if (!activeSet.has(cat)) {
+        item.style.opacity = '0.5';
+      }
       const nameSpan = document.createElement('span');
       nameSpan.className = 'goal-cat';
       nameSpan.textContent = cat;
