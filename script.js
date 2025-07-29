@@ -699,6 +699,12 @@ let goalMode = 'weekly';
     const key = getGoalKey(mode);
 
     const categorySet = new Set();
+
+    // Include categories from saved goals for this period
+    const savedGoals = goals[mode][key] || {};
+    Object.keys(savedGoals).forEach(cat => categorySet.add(cat));
+
+    // Also include categories found in entries within the current period
     entries.forEach(e => {
       const eDate = new Date(e.date);
       if (mode === 'weekly') {
