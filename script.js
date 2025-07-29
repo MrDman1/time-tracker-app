@@ -658,6 +658,13 @@
       }
     }
 
+    if (rangeSelect.value === 'month') {
+      if (!currentMonthStart || isNaN(currentMonthStart.getTime())) {
+        const now = new Date();
+        currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+    }
+
     goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
     renderGoalPanel();
     renderChart();
@@ -705,6 +712,10 @@ let goalMode = 'weekly';
 
     const mode = getGoalMode();
     const key = getGoalKey(mode);
+
+    const header = document.createElement('h4');
+    header.textContent = mode === 'weekly' ? `Goals for ${getGoalKey()}` : `Goals for ${getGoalKey()}`;
+    goalListEl.appendChild(header);
 
     if (!goals[mode][key]) goals[mode][key] = {};
 
