@@ -777,22 +777,39 @@ signupBtn.addEventListener("click", () => {
   logoutBtn.addEventListener("click", () => {
     auth.signOut();
   });
-  window.onload = () => {
-    auth.onAuthStateChanged(async user => {
-      if (user) {
-        signupBtn.style.display = "none";
-        loginBtn.style.display = "none";
-        emailInput.style.display = "none";
-        passwordInput.style.display = "none";
-        logoutBtn.style.display = "inline";
-        userInfo.textContent = user.email;
+
+  function showAppUI(email) {
+    signupBtn.style.display = "none";
+    loginBtn.style.display = "none";
+    emailInput.style.display = "none";
+    passwordInput.style.display = "none";
+    logoutBtn.style.display = "inline";
+    userInfo.textContent = email;
+    sections.forEach(s => s.classList.remove('hidden'));
+  }
+
+  function showLoginUI() {
+    signupBtn.style.display = "inline";
+    loginBtn.style.display = "inline";
+    emailInput.style.display = "inline";
+    passwordInput.style.display = "inline";
+    logoutBtn.style.display = "none";
+    userInfo.textContent = "";
+    sections.forEach(s => s.classList.add('hidden'));
+  }
+
+  async function handleAuthStateChange(user) {
+    if (user) {
+      showAppUI(user.email);
 
       const localEntries = JSON.parse(localStorage.getItem("entries") || "[]");
       const localColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
       const localList = JSON.parse(localStorage.getItem("categoryList") || "[]");
       const localGoals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
-      const hasLocal = localEntries.length || Object.keys(localColors).length || localList.length ||
-                       Object.keys(localGoals.daily || {}).length || Object.keys(localGoals.weekly || {}).length;
+      const hasLocal = localEntries.length || Object.keys(localColors).length ||
+                       localList.length ||
+                       Object.keys(localGoals.daily || {}).length ||
+                       Object.keys(localGoals.weekly || {}).length;
 
       if (hasLocal) {
         await db.collection("users").doc(user.uid).set({
@@ -820,22 +837,19 @@ signupBtn.addEventListener("click", () => {
         categoryList = [];
         goals = {daily:{},weekly:{}};
       }
-        sections.forEach(s => s.classList.remove('hidden'));
-        renderView();
-      } else {
-        signupBtn.style.display = "inline";
-        loginBtn.style.display = "inline";
-        emailInput.style.display = "inline";
-        passwordInput.style.display = "inline";
-        logoutBtn.style.display = "none";
-        userInfo.textContent = "";
-        sections.forEach(s => s.classList.add('hidden'));
-        entries = JSON.parse(localStorage.getItem("entries") || "[]");
-        categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
-        categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
-        goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
-        renderView();
-      }
-    });
+
+      renderView();
+    } else {
+      showLoginUI();
+      entries = JSON.parse(localStorage.getItem("entries") || "[]");
+      categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
+      categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
+      goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
+      renderView();
+    }
+  }
+
+  window.onload = () => {
+    auth.onAuthStateChanged(handleAuthStateChange);
   };
 })();
