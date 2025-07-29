@@ -651,27 +651,17 @@
       }
     }
     renderChart();
+    goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
     renderGoalPanel();
     console.log('Category overview rendered');
   }
 
-  const goalListEl = document.getElementById('goal-list');
-  const goalToggleButtons = document.querySelectorAll('#goal-toggle button');
-  let goalMode = 'weekly';
+const goalListEl = document.getElementById('goal-list');
+let goalMode = 'weekly';
 
-  goalToggleButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.classList.contains('active')) return;
-      goalToggleButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      goalListEl.style.opacity = 0;
-      setTimeout(() => {
-        goalMode = btn.dataset.mode;
-        renderGoalPanel();
-        goalListEl.style.opacity = 1;
-      }, 300);
-    });
-  });
+  function getGoalMode() {
+    return rangeSelect.value === 'month' ? 'monthly' : 'weekly';
+  }
 
   function getActualForCategory(cat, mode) {
     let keys = [];
@@ -709,7 +699,7 @@
       input.type = 'number';
       input.step = '0.1';
       input.placeholder = 'Set Goal';
-      let originalVal = goals[goalMode][cat] ?? '';
+      let originalVal = goals[getGoalMode()][cat] ?? '';
       input.value = originalVal;
 
       input.addEventListener('input', () => {
@@ -721,9 +711,9 @@
 
         const newVal = parseFloat(input.value);
         if (!isNaN(newVal)) {
-          goals[goalMode][cat] = newVal;
+          goals[getGoalMode()][cat] = newVal;
         } else {
-          delete goals[goalMode][cat];
+          delete goals[getGoalMode()][cat];
         }
 
         delete input.dataset.dirty;
@@ -734,8 +724,8 @@
       const progress = document.createElement('div');
       progress.className = 'progress';
       const bar = document.createElement('span');
-      const goalVal = goals[goalMode][cat];
-      const actual = getActualForCategory(cat, goalMode);
+      const goalVal = goals[getGoalMode()][cat];
+      const actual = getActualForCategory(cat, getGoalMode());
       if (goalVal) {
         const pct = Math.min(100, (actual / goalVal) * 100);
         bar.style.width = pct + '%';
@@ -898,32 +888,30 @@
       currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    goalToggleButtons.forEach(b => {
-      b.classList.toggle('active', b.dataset.mode === goalMode);
-    });
-
     renderCategoryOverview();
     renderGoalPanel();
   });
   exportBtn.addEventListener('click', exportToExcel);
-  prevWeekBtn.addEventListener('click', () => {
-    if (goalMode === 'monthly') {
-      currentMonthStart.setMonth(currentMonthStart.getMonth() - 1);
-    } else {
-      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-    }
-    renderCategoryOverview();
-    renderGoalPanel();
-  });
-  nextWeekBtn.addEventListener('click', () => {
-    if (goalMode === 'monthly') {
-      currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
-    } else {
-      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-    }
-    renderCategoryOverview();
-    renderGoalPanel();
-  });
+    prevWeekBtn.addEventListener('click', () => {
+      if (goalMode === 'monthly') {
+        currentMonthStart.setMonth(currentMonthStart.getMonth() - 1);
+      } else {
+        currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+      }
+      renderCategoryOverview();
+      goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
+      renderGoalPanel();
+    });
+    nextWeekBtn.addEventListener('click', () => {
+      if (goalMode === 'monthly') {
+        currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
+      } else {
+        currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+      }
+      renderCategoryOverview();
+      goalMode = rangeSelect.value === 'month' ? 'monthly' : 'weekly';
+      renderGoalPanel();
+    });
 
   window.addEventListener('storage', () => {
     if (auth.currentUser) return;
