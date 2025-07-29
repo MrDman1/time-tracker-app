@@ -753,6 +753,7 @@
   });
 
   window.addEventListener('storage', () => {
+    if (auth.currentUser) return;
     entries = JSON.parse(localStorage.getItem('entries') || '[]');
     categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
     renderCategoryOverview();
@@ -775,7 +776,12 @@ signupBtn.addEventListener("click", () => {
     }
   });
   logoutBtn.addEventListener("click", () => {
-    auth.signOut();
+    auth.signOut().then(() => {
+      localStorage.removeItem('entries');
+      localStorage.removeItem('categoryColors');
+      localStorage.removeItem('categoryList');
+      localStorage.removeItem('goals');
+    });
   });
 
   function showAppUI(email) {
@@ -849,6 +855,7 @@ signupBtn.addEventListener("click", () => {
       localStorage.removeItem('categoryColors');
       localStorage.removeItem('categoryList');
       localStorage.removeItem('goals');
+      localStorage.setItem('syncedOnce', 'true');
 
       console.log(`Synced ${entries.length} entries and ${categoryList.length} categories`);
 
