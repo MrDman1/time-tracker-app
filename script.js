@@ -695,6 +695,7 @@
   }
 
   function renderGoalPanel() {
+    document.getElementById("goal-panel").className = "goal-panel " + goalMode;
     goalListEl.innerHTML = '';
     categoryList.forEach(cat => {
       const item = document.createElement('div');
