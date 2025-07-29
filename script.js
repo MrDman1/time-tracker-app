@@ -33,6 +33,7 @@
   let chart;
   let overviewChart;
   let currentWeekStart = getWeekStart(new Date());
+  let currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   let entries = JSON.parse(localStorage.getItem('entries') || '[]');
   let categoryColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
   let categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
@@ -673,25 +674,26 @@
   });
 
   function getActualForCategory(cat, mode) {
+    let keys = [];
+
     if (mode === 'weekly') {
       const start = new Date(currentWeekStart);
-      const keys = Array.from({ length: 7 }, (_, i) => {
+      keys = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(start);
         d.setDate(start.getDate() + i);
         return d.toISOString().slice(0, 10);
       });
-      return entries.filter(e => e.category === cat && keys.includes(e.date)).reduce((s, e) => s + e.hours, 0);
     } else if (mode === 'monthly') {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const keys = [];
+      const start = new Date(currentMonthStart);
+      const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         keys.push(d.toISOString().slice(0, 10));
       }
-      return entries.filter(e => e.category === cat && keys.includes(e.date)).reduce((s, e) => s + e.hours, 0);
     }
-    return 0;
+
+    return entries
+      .filter(e => e.category === cat && keys.includes(e.date))
+      .reduce((s, e) => s + e.hours, 0);
   }
 
   function renderGoalPanel() {
@@ -880,20 +882,35 @@
   rangeSelect.addEventListener('change', () => {
     const range = rangeSelect.value;
     goalMode = range === 'month' ? 'monthly' : 'weekly';
+
+    if (goalMode === 'monthly') {
+      const now = new Date();
+      currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
     goalToggleButtons.forEach(b => {
       b.classList.toggle('active', b.dataset.mode === goalMode);
     });
+
     renderCategoryOverview();
     renderGoalPanel();
   });
   exportBtn.addEventListener('click', exportToExcel);
   prevWeekBtn.addEventListener('click', () => {
-    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    if (goalMode === 'monthly') {
+      currentMonthStart.setMonth(currentMonthStart.getMonth() - 1);
+    } else {
+      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    }
     renderCategoryOverview();
     renderGoalPanel();
   });
   nextWeekBtn.addEventListener('click', () => {
-    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    if (goalMode === 'monthly') {
+      currentMonthStart.setMonth(currentMonthStart.getMonth() + 1);
+    } else {
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    }
     renderCategoryOverview();
     renderGoalPanel();
   });
