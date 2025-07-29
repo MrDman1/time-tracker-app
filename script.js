@@ -802,40 +802,45 @@ signupBtn.addEventListener("click", () => {
     if (user) {
       showAppUI(user.email);
 
-      const localEntries = JSON.parse(localStorage.getItem("entries") || "[]");
-      const localColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
-      const localList = JSON.parse(localStorage.getItem("categoryList") || "[]");
-      const localGoals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
-      const hasLocal = localEntries.length || Object.keys(localColors).length ||
-                       localList.length ||
-                       Object.keys(localGoals.daily || {}).length ||
-                       Object.keys(localGoals.weekly || {}).length;
-
-      if (hasLocal) {
-        await db.collection("users").doc(user.uid).set({
-          entries: localEntries,
-          categoryColors: localColors,
-          categoryList: localList,
-          goals: localGoals
-        });
-        localStorage.removeItem("entries");
-        localStorage.removeItem("categoryColors");
-        localStorage.removeItem("categoryList");
-        localStorage.removeItem("goals");
-      }
-
       const docSnap = await db.collection("users").doc(user.uid).get();
+
       if (docSnap.exists) {
         const data = docSnap.data();
         entries = data.entries || [];
         categoryColors = data.categoryColors || {};
         categoryList = data.categoryList || [];
-        goals = data.goals || {daily:{},weekly:{}};
+        goals = data.goals || {daily: {}, weekly: {}};
       } else {
-        entries = [];
-        categoryColors = {};
-        categoryList = [];
-        goals = {daily:{},weekly:{}};
+        const synced = localStorage.getItem('cloudSynced') === 'true';
+        if (!synced) {
+          const localEntries = JSON.parse(localStorage.getItem('entries') || '[]');
+          const localColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
+          const localList = JSON.parse(localStorage.getItem('categoryList') || '[]');
+          const localGoals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+
+          await db.collection('users').doc(user.uid).set({
+            entries: localEntries,
+            categoryColors: localColors,
+            categoryList: localList,
+            goals: localGoals
+          });
+
+          entries = localEntries;
+          categoryColors = localColors;
+          categoryList = localList;
+          goals = localGoals;
+
+          localStorage.removeItem('entries');
+          localStorage.removeItem('categoryColors');
+          localStorage.removeItem('categoryList');
+          localStorage.removeItem('goals');
+          localStorage.setItem('cloudSynced', 'true');
+        } else {
+          entries = [];
+          categoryColors = {};
+          categoryList = [];
+          goals = {daily: {}, weekly: {}};
+        }
       }
 
       renderView();
