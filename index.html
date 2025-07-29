@@ -10,6 +10,14 @@
 </head>
 <body>
   <h1>Time Tracker</h1>
+  <div id="auth-panel">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="signup-btn">Sign Up</button>
+    <button id="login-btn">Login</button>
+    <button id="logout-btn" style="display:none;">Logout</button>
+    <span id="user-info"></span>
+  </div>
   <section>
     <h2>Add Entry</h2>
     <form id="entry-form">
@@ -76,6 +84,23 @@
 </div>
   </section>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBQifsCsnEcjtiasxZW1EP2laUOhPZl0ig",
+      authDomain: "time-tracker-1d719.firebaseapp.com",
+      projectId: "time-tracker-1d719",
+      storageBucket: "time-tracker-1d719.firebasestorage.app",
+      messagingSenderId: "484947921753",
+      appId: "1:484947921753:web:3d39a3f623f82e23099a48",
+      measurementId: "G-ZR7H24F2QR"
+    };
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+  </script>
   <script src="script.js"></script>
 </body>
 </html>

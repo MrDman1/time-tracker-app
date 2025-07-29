@@ -21,6 +21,14 @@
   const weekLabel = document.getElementById('week-label');
   const weekControls = document.getElementById('week-controls');
 
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const signupBtn = document.getElementById("signup-btn");
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const userInfo = document.getElementById("user-info");
+  const auth = firebase.auth();
+  const db = firebase.firestore();
   let chart;
   let overviewChart;
   let currentWeekStart = getWeekStart(new Date());
@@ -36,19 +44,33 @@
 
   function saveColors() {
     localStorage.setItem('categoryColors', JSON.stringify(categoryColors));
+    saveToFirestore();
   }
 
   function saveEntries() {
     localStorage.setItem('entries', JSON.stringify(entries));
+    saveToFirestore();
   }
 
   function saveCategoryList() {
     localStorage.setItem('categoryList', JSON.stringify(categoryList));
+    saveToFirestore();
   }
 
   function saveGoals() {
     localStorage.setItem('goals', JSON.stringify(goals));
+    saveToFirestore();
   }
+  function saveToFirestore() {
+    if (!auth.currentUser) return;
+    db.collection("users").doc(auth.currentUser.uid).set({
+      entries,
+      categoryColors,
+      categoryList,
+      goals
+    });
+  }
+
 
   function parseLocalDate(str) {
     return new Date(str + 'T00:00');
@@ -734,5 +756,59 @@
     categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
     goals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
     renderGoalPanel();
+  });
+signupBtn.addEventListener("click", () => {
+    const email = emailInput.value.trim();
+    const pass = passwordInput.value;
+    if (email && pass) {
+      auth.createUserWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+    }
+  });
+  loginBtn.addEventListener("click", () => {
+    const email = emailInput.value.trim();
+    const pass = passwordInput.value;
+    if (email && pass) {
+      auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+    }
+  });
+  logoutBtn.addEventListener("click", () => {
+    auth.signOut();
+  });
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      signupBtn.style.display = "none";
+      loginBtn.style.display = "none";
+      logoutBtn.style.display = "inline";
+      userInfo.textContent = user.email;
+      db.collection("users").doc(user.uid).get().then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          entries = data.entries || [];
+          categoryColors = data.categoryColors || {};
+          categoryList = data.categoryList || [];
+          goals = data.goals || {daily:{},weekly:{}};
+        } else {
+          entries = [];
+          categoryColors = {};
+          categoryList = [];
+          goals = {daily:{},weekly:{}};
+        }
+        saveEntries();
+        saveColors();
+        saveCategoryList();
+        saveGoals();
+        renderView();
+      });
+    } else {
+      signupBtn.style.display = "inline";
+      loginBtn.style.display = "inline";
+      logoutBtn.style.display = "none";
+      userInfo.textContent = "";
+      entries = JSON.parse(localStorage.getItem("entries") || "[]");
+      categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
+      categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
+        goals = JSON.parse(localStorage.getItem("goals") || "{\"daily\":{},\"weekly\":{}}");
+      renderView();
+    }
   });
 })();
