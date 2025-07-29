@@ -203,6 +203,109 @@
     weekLabel.textContent = '';
   }
 
+  let editingCategoryCell = null;
+
+  function cancelCategoryEdit() {
+    if (!editingCategoryCell) return;
+    const td = editingCategoryCell;
+    const name = td.dataset.origName;
+    const color = td.dataset.origColor;
+    td.innerHTML = '';
+    const sw = document.createElement('span');
+    sw.className = 'color-swatch';
+    sw.style.background = color;
+    const txt = document.createElement('span');
+    txt.textContent = ' ' + name;
+    td.appendChild(sw);
+    td.appendChild(txt);
+    editingCategoryCell = null;
+  }
+
+  function startCategoryEdit(td, cat) {
+    if (editingCategoryCell && editingCategoryCell !== td) cancelCategoryEdit();
+    if (editingCategoryCell === td) return;
+    editingCategoryCell = td;
+    const origColor = categoryColors[cat] || '#888888';
+    td.dataset.origName = cat;
+    td.dataset.origColor = origColor;
+    td.innerHTML = '';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = cat;
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = origColor;
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    td.append(nameInput, colorInput, saveBtn, cancelBtn);
+    nameInput.focus();
+
+    function cleanupListeners() {
+      nameInput.removeEventListener('keydown', onKey);
+      colorInput.removeEventListener('keydown', onKey);
+      td.removeEventListener('focusout', onBlur);
+    }
+
+    function finishSave() {
+      cleanupListeners();
+      editingCategoryCell = null;
+    }
+
+    function save() {
+      const newName = nameInput.value.trim();
+      if (!newName) return cancel();
+      const newColor = colorInput.value;
+      const oldName = cat;
+      if (newName !== oldName) {
+        entries.forEach(e => { if (e.category === oldName) e.category = newName; });
+        categoryColors[newName] = newColor;
+        delete categoryColors[oldName];
+        const idx = categoryList.indexOf(oldName);
+        if (idx !== -1) categoryList[idx] = newName;
+      } else if (newColor !== origColor) {
+        categoryColors[newName] = newColor;
+      }
+      saveEntries();
+      saveColors();
+      saveCategoryList();
+      finishSave();
+      renderCategoryOverview();
+      renderChart();
+      renderGoalPanel();
+    }
+
+    function cancel() {
+      cleanupListeners();
+      cancelCategoryEdit();
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancel();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        save();
+      }
+    }
+
+    function onBlur() {
+      setTimeout(() => {
+        if (editingCategoryCell === td && !td.contains(document.activeElement)) {
+          cancel();
+        }
+      }, 0);
+    }
+
+    saveBtn.addEventListener('click', save);
+    cancelBtn.addEventListener('click', cancel);
+    nameInput.addEventListener('keydown', onKey);
+    colorInput.addEventListener('keydown', onKey);
+    td.addEventListener('focusout', onBlur);
+  }
+
   function renderWeekHeatmap() {
     const days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(currentWeekStart);
@@ -227,38 +330,57 @@
     });
     const sorted = categoryList.slice().sort((a, b) => weeklyTotals[b] - weeklyTotals[a]);
 
-    let html = '<tr><th>Category</th>' +
-      keys.map(k => '<th>' + parseLocalDate(k).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</th>').join('') +
-      '</tr>';
+    heatmapTable.innerHTML = '';
+    const header = document.createElement('tr');
+    const thCat = document.createElement('th');
+    thCat.textContent = 'Category';
+    header.appendChild(thCat);
+    keys.forEach(k => {
+      const th = document.createElement('th');
+      th.textContent = parseLocalDate(k).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      header.appendChild(th);
+    });
+    heatmapTable.appendChild(header);
+
     sorted.forEach(cat => {
-      html += '<tr><td>' + cat + '</td>';
+      const tr = document.createElement('tr');
+      const tdCat = document.createElement('td');
+      tdCat.dataset.category = cat;
+      const swatch = document.createElement('span');
+      swatch.className = 'color-swatch';
+      swatch.style.background = categoryColors[cat] || '#888888';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = ' ' + cat;
+      tdCat.append(swatch, nameSpan);
+      tdCat.addEventListener('click', () => startCategoryEdit(tdCat, cat));
+      tr.appendChild(tdCat);
       keys.forEach(k => {
+        const td = document.createElement('td');
         const val = totals[cat] && totals[cat][k] ? totals[cat][k].toFixed(1) : '0';
-        html += '<td data-cat="' + cat + '" data-date="' + k + '">' + val + '</td>';
+        td.textContent = val;
+        td.dataset.cat = cat;
+        td.dataset.date = k;
+        td.addEventListener('click', () => {
+          const current = parseFloat(td.textContent) || 0;
+          const val = prompt('Hours', current);
+          if (val === null) return;
+          const hours = parseFloat(val);
+          if (!isNaN(hours)) {
+            entries = entries.filter(e => !(e.category === cat && e.date === k));
+            if (hours > 0) entries.push({ category: cat, date: k, hours });
+            saveEntries();
+            td.classList.add('edited');
+            setTimeout(() => td.classList.remove('edited'), 800);
+            renderCategoryOverview();
+            renderGoalPanel();
+          }
+        });
+        tr.appendChild(td);
       });
-      html += '</tr>';
+      heatmapTable.appendChild(tr);
     });
-    heatmapTable.innerHTML = html;
+
     weekLabel.textContent = `${days[0].toLocaleDateString()} - ${days[6].toLocaleDateString()}`;
-    heatmapTable.querySelectorAll('td[data-cat]').forEach(td => {
-      td.addEventListener('click', () => {
-        const cat = td.dataset.cat;
-        const date = td.dataset.date;
-        const current = parseFloat(td.textContent) || 0;
-        const val = prompt('Hours', current);
-        if (val === null) return;
-        const hours = parseFloat(val);
-        if (!isNaN(hours)) {
-          entries = entries.filter(e => !(e.category === cat && e.date === date));
-          if (hours > 0) entries.push({ category: cat, date, hours });
-          saveEntries();
-          td.classList.add('edited');
-          setTimeout(() => td.classList.remove('edited'), 800);
-          renderCategoryOverview();
-          renderGoalPanel();
-        }
-      });
-    });
   }
 
   function renderMonthChart() {
