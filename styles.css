@@ -102,6 +102,15 @@ canvas {
   transition: background-color 0.5s;
 }
 
+.color-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 /* chart and goal panel layout */
 #chart-goal-container {
   display: flex;
