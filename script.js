@@ -876,7 +876,15 @@
 
   showChartBtn.addEventListener('click', renderChart);
   dayFilterInputs.forEach(cb => cb.addEventListener('change', renderChart));
-  rangeSelect.addEventListener('change', renderCategoryOverview);
+  rangeSelect.addEventListener('change', () => {
+    const range = rangeSelect.value;
+    goalMode = range === 'month' ? 'monthly' : 'weekly';
+    goalToggleButtons.forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === goalMode);
+    });
+    renderCategoryOverview();
+    renderGoalPanel();
+  });
   exportBtn.addEventListener('click', exportToExcel);
   prevWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() - 7);
