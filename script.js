@@ -700,11 +700,11 @@ let goalMode = 'weekly';
 
     const categorySet = new Set();
 
-    // Include categories from saved goals for this period
-    const savedGoals = goals[mode][key] || {};
-    Object.keys(savedGoals).forEach(cat => categorySet.add(cat));
+    // Add categories from saved goals (even if no entries exist)
+    const currentGoals = goals[mode][key] || {};
+    Object.keys(currentGoals).forEach(cat => categorySet.add(cat));
 
-    // Also include categories found in entries within the current period
+    // Add categories from actual entries in the selected week/month
     entries.forEach(e => {
       const eDate = new Date(e.date);
       if (mode === 'weekly') {
@@ -720,8 +720,6 @@ let goalMode = 'weekly';
     });
 
     const categories = Array.from(categorySet).sort();
-
-    const currentGoals = goals[mode][key] || {};
 
     console.log('Current goal mode:', getGoalMode(), 'Goal key:', getGoalKey());
     console.log('Visible categories:', categories);
