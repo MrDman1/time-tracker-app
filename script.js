@@ -777,14 +777,15 @@ signupBtn.addEventListener("click", () => {
   logoutBtn.addEventListener("click", () => {
     auth.signOut();
   });
-  auth.onAuthStateChanged(async user => {
-    if (user) {
-      signupBtn.style.display = "none";
-      loginBtn.style.display = "none";
-      emailInput.style.display = "none";
-      passwordInput.style.display = "none";
-      logoutBtn.style.display = "inline";
-      userInfo.textContent = user.email;
+  window.onload = () => {
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        signupBtn.style.display = "none";
+        loginBtn.style.display = "none";
+        emailInput.style.display = "none";
+        passwordInput.style.display = "none";
+        logoutBtn.style.display = "inline";
+        userInfo.textContent = user.email;
 
       const localEntries = JSON.parse(localStorage.getItem("entries") || "[]");
       const localColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
@@ -819,21 +820,22 @@ signupBtn.addEventListener("click", () => {
         categoryList = [];
         goals = {daily:{},weekly:{}};
       }
-      sections.forEach(s => s.classList.remove('hidden'));
-      renderView();
-    } else {
-      signupBtn.style.display = "inline";
-      loginBtn.style.display = "inline";
-      emailInput.style.display = "inline";
-      passwordInput.style.display = "inline";
-      logoutBtn.style.display = "none";
-      userInfo.textContent = "";
-      sections.forEach(s => s.classList.add('hidden'));
-      entries = JSON.parse(localStorage.getItem("entries") || "[]");
-      categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
-      categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
-      goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
-      renderView();
-    }
-  });
+        sections.forEach(s => s.classList.remove('hidden'));
+        renderView();
+      } else {
+        signupBtn.style.display = "inline";
+        loginBtn.style.display = "inline";
+        emailInput.style.display = "inline";
+        passwordInput.style.display = "inline";
+        logoutBtn.style.display = "none";
+        userInfo.textContent = "";
+        sections.forEach(s => s.classList.add('hidden'));
+        entries = JSON.parse(localStorage.getItem("entries") || "[]");
+        categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
+        categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
+        goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
+        renderView();
+      }
+    });
+  };
 })();
