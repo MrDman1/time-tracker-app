@@ -802,46 +802,55 @@ signupBtn.addEventListener("click", () => {
     if (user) {
       showAppUI(user.email);
 
-      const docSnap = await db.collection("users").doc(user.uid).get();
+      const localEntries = JSON.parse(localStorage.getItem('entries') || '[]');
+      const localColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
+      const localList = JSON.parse(localStorage.getItem('categoryList') || '[]');
+      const localGoals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
+
+      const docRef = db.collection("users").doc(user.uid);
+      const docSnap = await docRef.get();
+
+      let cloudEntries = [];
+      let cloudColors = {};
+      let cloudList = [];
+      let cloudGoals = { daily: {}, weekly: {} };
 
       if (docSnap.exists) {
         const data = docSnap.data();
-        entries = data.entries || [];
-        categoryColors = data.categoryColors || {};
-        categoryList = data.categoryList || [];
-        goals = data.goals || {daily: {}, weekly: {}};
-      } else {
-        const synced = localStorage.getItem('cloudSynced') === 'true';
-        if (!synced) {
-          const localEntries = JSON.parse(localStorage.getItem('entries') || '[]');
-          const localColors = JSON.parse(localStorage.getItem('categoryColors') || '{}');
-          const localList = JSON.parse(localStorage.getItem('categoryList') || '[]');
-          const localGoals = JSON.parse(localStorage.getItem('goals') || '{"daily":{},"weekly":{}}');
-
-          await db.collection('users').doc(user.uid).set({
-            entries: localEntries,
-            categoryColors: localColors,
-            categoryList: localList,
-            goals: localGoals
-          });
-
-          entries = localEntries;
-          categoryColors = localColors;
-          categoryList = localList;
-          goals = localGoals;
-
-          localStorage.removeItem('entries');
-          localStorage.removeItem('categoryColors');
-          localStorage.removeItem('categoryList');
-          localStorage.removeItem('goals');
-          localStorage.setItem('cloudSynced', 'true');
-        } else {
-          entries = [];
-          categoryColors = {};
-          categoryList = [];
-          goals = {daily: {}, weekly: {}};
-        }
+        cloudEntries = data.entries || [];
+        cloudColors = data.categoryColors || {};
+        cloudList = data.categoryList || [];
+        cloudGoals = data.goals || { daily: {}, weekly: {} };
       }
+
+      if (localEntries.length > cloudEntries.length) {
+        await docRef.set({
+          entries: localEntries,
+          categoryColors: localColors,
+          categoryList: localList,
+          goals: localGoals
+        });
+
+        entries = localEntries;
+        categoryColors = localColors;
+        categoryList = localList;
+        goals = localGoals;
+      } else {
+        entries = cloudEntries;
+        categoryColors = cloudColors;
+        categoryList = cloudList;
+        goals = cloudGoals;
+      }
+
+      const mergedCats = new Set(categoryList.concat(entries.map(e => e.category)));
+      categoryList = Array.from(mergedCats);
+
+      localStorage.removeItem('entries');
+      localStorage.removeItem('categoryColors');
+      localStorage.removeItem('categoryList');
+      localStorage.removeItem('goals');
+
+      console.log(`Synced ${entries.length} entries and ${categoryList.length} categories`);
 
       renderView();
     } else {
@@ -850,6 +859,10 @@ signupBtn.addEventListener("click", () => {
       categoryColors = JSON.parse(localStorage.getItem("categoryColors") || "{}");
       categoryList = JSON.parse(localStorage.getItem("categoryList") || "[]");
       goals = JSON.parse(localStorage.getItem("goals") || '{"daily":{},"weekly":{}}');
+
+      const mergedCats = new Set(categoryList.concat(entries.map(e => e.category)));
+      categoryList = Array.from(mergedCats);
+
       renderView();
     }
   }
