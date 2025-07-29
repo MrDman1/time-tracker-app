@@ -634,6 +634,10 @@
 
   function renderCategoryOverview() {
     if (rangeSelect.value === 'month') {
+      const now = new Date();
+      if (!currentMonthStart || currentMonthStart.getMonth() !== now.getMonth()) {
+        currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
       renderMonthCalendar();
       heatmapTable.innerHTML = '';
       heatmapTable.style.display = 'none';
