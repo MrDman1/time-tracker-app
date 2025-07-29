@@ -663,6 +663,12 @@ let goalMode = 'weekly';
     return rangeSelect.value === 'month' ? 'monthly' : 'weekly';
   }
 
+  function getGoalKey(mode = getGoalMode()) {
+    return mode === 'weekly'
+      ? currentWeekStart.toISOString().slice(0, 10)
+      : currentMonthStart.toISOString().slice(0, 7);
+  }
+
   function getActualForCategory(cat, mode) {
     let keys = [];
 
@@ -689,6 +695,9 @@ let goalMode = 'weekly';
   function renderGoalPanel() {
     document.getElementById("goal-panel").className = "goal-panel " + goalMode;
     goalListEl.innerHTML = '';
+    const mode = getGoalMode();
+    const key = getGoalKey(mode);
+    const currentGoals = goals[mode][key] || {};
     categoryList.forEach(cat => {
       const item = document.createElement('div');
       item.className = 'goal-item';
@@ -699,7 +708,7 @@ let goalMode = 'weekly';
       input.type = 'number';
       input.step = '0.1';
       input.placeholder = 'Set Goal';
-      let originalVal = goals[getGoalMode()][cat] ?? '';
+      let originalVal = currentGoals[cat] ?? '';
       input.value = originalVal;
 
       input.addEventListener('input', () => {
@@ -710,10 +719,12 @@ let goalMode = 'weekly';
         if (input.dataset.dirty !== 'true') return;
 
         const newVal = parseFloat(input.value);
+        const saveKey = getGoalKey(mode);
+        if (!goals[mode][saveKey]) goals[mode][saveKey] = {};
         if (!isNaN(newVal)) {
-          goals[getGoalMode()][cat] = newVal;
+          goals[mode][saveKey][cat] = newVal;
         } else {
-          delete goals[getGoalMode()][cat];
+          delete goals[mode][saveKey][cat];
         }
 
         delete input.dataset.dirty;
@@ -724,7 +735,7 @@ let goalMode = 'weekly';
       const progress = document.createElement('div');
       progress.className = 'progress';
       const bar = document.createElement('span');
-      const goalVal = goals[getGoalMode()][cat];
+      const goalVal = currentGoals[cat];
       const actual = getActualForCategory(cat, getGoalMode());
       if (goalVal) {
         const pct = Math.min(100, (actual / goalVal) * 100);
