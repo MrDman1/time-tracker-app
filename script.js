@@ -820,10 +820,6 @@ signupBtn.addEventListener("click", () => {
         categoryList = [];
         goals = {daily:{},weekly:{}};
       }
-      saveEntries();
-      saveColors();
-      saveCategoryList();
-      saveGoals();
       sections.forEach(s => s.classList.remove('hidden'));
       renderView();
     } else {
